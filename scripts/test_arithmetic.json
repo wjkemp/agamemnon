@@ -1,0 +1,19 @@
+[
+    "Configure the loglevel to maximium",
+    { "command": "set_config", "name" : "loglevel", "value": 3 },
+
+    { "command": "set_variable", "name" : "test", "value" : { "operator": "and", "left": "0xAAAAAAAAAAAAAAAA", "right": "0x5555555555555555" } },
+    { "command": "assert", "variable": "test", "value": "0x0000000000000000", "condition": true },
+
+    { "command": "set_variable", "name" : "test", "value" : { "operator": "or", "left": "0xAAAAAAAAAAAAAAAA", "right": "0x5555555555555555" } },
+    { "command": "assert", "variable": "test", "value": "0xFFFFFFFFFFFFFFFF", "condition": true },
+
+    { "command": "set_variable", "name" : "test", "value" : { "operator": "not", "right": "0x5555555555555555" } },
+    { "command": "assert", "variable": "test", "value": "0xAAAAAAAAAAAAAAAA", "condition": true },
+
+    { "command": "set_variable", "name" : "test", "value" : { "operator": "shl", "left": "0x00000000AAAAAAAA", "right": "32" } },
+    { "command": "assert", "variable": "test", "value": "0xAAAAAAAA00000000", "condition": true },
+
+    { "command": "set_variable", "name" : "test", "value" : { "operator": "shr", "left": "0xAAAAAAAA00000000", "right": "32" } },
+    { "command": "assert", "variable": "test", "value": "0x00000000AAAAAAAA", "condition": true }
+]

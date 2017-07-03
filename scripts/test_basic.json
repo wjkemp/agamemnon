@@ -1,0 +1,43 @@
+[
+    "Configure the loglevel to maximium",
+    { "command": "set_config", "name" : "loglevel", "value": 3 },
+
+    { "command": "set_variable", "name" : "CONSTANT_A", "value" : "0x00000001" },
+    { "command": "set_variable", "name" : "CONSTANT_B", "value" : "0x00000002" },
+
+
+    "Define a test region",
+    {
+        "command" : "declare_memory_region",
+        "name" : "mr",
+        "address" : "0xfe8ff400",
+        "size" : "1024"
+    },
+
+    "Write a test value",
+    {
+        "command": "write_value",
+        "memory_region": "mr",
+        "offset": "0",
+        "width": 32,
+        "value": "0xa5b20055"
+    },
+
+    "Read back",
+    {
+        "command": "read_value",
+        "memory_region": "mr",
+        "offset": "0",
+        "width": 32,
+        "variable_name": "temp",
+        "display_prefix": "value read back: "
+    },
+
+    "Check",
+    {
+        "command": "assert",
+        "variable": "temp",
+        "value": "0xa5b20055",
+        "condition": true
+    }
+]

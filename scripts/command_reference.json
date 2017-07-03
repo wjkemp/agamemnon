@@ -1,0 +1,61 @@
+[
+    { "command": "set_config", "name" : "loglevel", "value": 3 },
+
+    { "command": "set_variable", "name" : "CONSTANT", "value" : "0x00000001" },
+
+    {
+        "command" : "declare_memory_region",
+        "name" : "test",
+        "address" : "0xfe8ff400",
+        "size" : "1024"
+    },
+
+    {
+        "command": "write_value",
+        "memory_region": "test",
+        "offset": "0",
+        "width": 32,
+        "value": "0x00000004"
+    },
+
+    {
+        "command": "read_value",
+        "memory_region": "test",
+        "offset": "0",
+        "width": 32,
+        "variable_name": "temp",
+        "display_prefix": "The value: "
+    },
+
+    {
+        "command": "print",
+        "message": "Value of temp: {1}",
+        "arguments" : [ "temp" ]
+    },
+
+    {
+        "command": "set_variable",
+        "name": "temp2",
+        "value": { "operator": "or", "left": "CONSTANT", "right": "temp" }
+    },
+
+    {
+        "command": "print",
+        "message": "Value of temp2: {1}",
+        "arguments" : [ "temp2" ]
+    },
+
+    {
+        "command": "poll_value",
+        "memory_region": "test",
+        "offset": "0",
+        "width": 32,
+        "condition": true,
+        "mask": "0x00000004",
+        "timeout": 1000
+    },
+    {
+        "command": "delay",
+        "ms": 1000
+    }
+]
