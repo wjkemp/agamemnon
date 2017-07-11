@@ -49,6 +49,7 @@ static void cmd_poll_value(const Json::Value& script, script_context& script_con
 static void cmd_delay(const Json::Value& script, script_context& script_context);
 static void cmd_print(const Json::Value& script, script_context& script_context);
 static void cmd_assert(const Json::Value& script, script_context& script_context);
+static void cmd_compare_memory(const Json::Value& script, script_context& script_context);
 
 
 
@@ -63,6 +64,7 @@ void commands_init()
 	command_dispatch_map["delay"] = cmd_delay;
 	command_dispatch_map["print"] = cmd_print;
 	command_dispatch_map["assert"] = cmd_assert;
+	command_dispatch_map["compare_memory"] = cmd_compare_memory;
 }
 
 void command_process(const Json::Value& script, script_context& script_context)
@@ -129,6 +131,10 @@ static void cmd_write_value(const Json::Value& script, script_context& script_co
 	int width = script["width"].asInt();
 	uint64_t value = expression_process(script["value"], script_context);
 
+	int count = script.get("count", 1).asInt();
+	uint64_t value_increment = expression_process(script.get("value_increment", "0"), script_context);
+
+
 	if (memory_region == nullptr) {
 		throw script_exception(fmt() << "memory region " << script["memory_region"].asString() << " not found");
 	}
@@ -138,19 +144,31 @@ static void cmd_write_value(const Json::Value& script, script_context& script_co
 	switch (width) {
 		case 8: {
 			uint8_t* ptr = (uint8_t*)((uint8_t*)memory_region->mapped_address() + offset);
-			*ptr = value;
+			for (int i=0; i < count; ++i) {
+				*ptr++ = value;
+				value += value_increment;
+			}
 		} break;
 		case 16: {
 			uint16_t* ptr = (uint16_t*)((uint8_t*)memory_region->mapped_address() + offset);
-			*ptr = value;
+			for (int i=0; i < count; ++i) {
+				*ptr++ = value;
+				value += value_increment;
+			}
 		} break;
 		case 32: {
 			uint32_t* ptr = (uint32_t*)((uint8_t*)memory_region->mapped_address() + offset);
-			*ptr = value;
+			for (int i=0; i < count; ++i) {
+				*ptr++ = value;
+				value += value_increment;
+			}
 		} break;
 		case 64: {
 			uint64_t* ptr = (uint64_t*)((uint8_t*)memory_region->mapped_address() + offset);
-			*ptr = value;
+			for (int i=0; i < count; ++i) {
+				*ptr++ = value;
+				value += value_increment;
+			}
 		} break;
 		default: {
 			throw script_exception(fmt() << "invalid data width: " << width);
@@ -308,5 +326,91 @@ static void cmd_assert(const Json::Value& script, script_context& script_context
 
 	if ((variable == value) != condition) {
 		throw script_exception("assertion failed");
+	}
+}
+
+static void cmd_compare_memory(const Json::Value& script, script_context& script_context)
+{
+	memory_region* memory_region = script_context.get_memory_region(script["memory_region"].asString());
+	uint64_t offset = expression_process(script["offset"].asString(), script_context);
+	int width = script["width"].asInt();
+	uint64_t value = expression_process(script["value"], script_context);
+	int count = script.get("count", 1).asInt();
+	uint64_t value_increment = expression_process(script.get("value_increment", "0"), script_context);
+	int max_error_count = script.get("max_error_count", 1).asInt();
+
+	if (memory_region == nullptr) {
+		throw script_exception(fmt() << "memory region " << script["memory_region"].asString() << " not found");
+	}
+
+	LOG(ll_vvv) << "compare_memory: memory_region=" << memory_region->name() << ", offset=" << std::hex << offset << ", count=" << count << ", value_increment=" << std::hex << value_increment;
+
+	uint64_t read_value = 0;
+	int error_count = 0;
+
+	switch (width) {
+		case 8: {
+			uint8_t* ptr = (uint8_t*)((uint8_t*)memory_region->mapped_address() + offset);
+			for (int i=0; i < count; ++i) {
+				read_value = *ptr++;
+				if (read_value != value) {
+					std::cout << "At offset " << offset << " (" << std::hex << offset << "), expected 0x" << std::hex << value << ", got 0x" << std::hex << read_value << std::endl;
+					error_count++;
+					if (error_count >= max_error_count) {
+						return;
+					}
+				}
+				offset += width / 8;
+				value += value_increment;
+			}
+		} break;
+		case 16: {
+			uint16_t* ptr = (uint16_t*)((uint8_t*)memory_region->mapped_address() + offset);
+			for (int i=0; i < count; ++i) {
+				read_value = *ptr++;
+				if (read_value != value) {
+					std::cout << "At offset " << offset << " (" << std::hex << offset << "), expected 0x" << std::hex << value << ", got 0x" << std::hex << read_value << std::endl;
+					error_count++;
+					if (error_count >= max_error_count) {
+						return;
+					}
+				}
+				offset += width / 8;
+				value += value_increment;
+			}
+		} break;
+		case 32: {
+			uint32_t* ptr = (uint32_t*)((uint8_t*)memory_region->mapped_address() + offset);
+			for (int i=0; i < count; ++i) {
+				read_value = *ptr++;
+				if (read_value != value) {
+					std::cout << "At offset " << offset << " (" << std::hex << offset << "), expected 0x" << std::hex << value << ", got 0x" << std::hex << read_value << std::endl;
+					error_count++;
+					if (error_count >= max_error_count) {
+						return;
+					}
+				}
+				offset += width / 8;
+				value += value_increment;
+			}
+		} break;
+		case 64: {
+			uint64_t* ptr = (uint64_t*)((uint8_t*)memory_region->mapped_address() + offset);
+			for (int i=0; i < count; ++i) {
+				read_value = *ptr++;
+				if (read_value != value) {
+					std::cout << "At offset " << offset << " (" << std::hex << offset << "), expected 0x" << std::hex << value << ", got 0x" << std::hex << read_value << std::endl;
+					error_count++;
+					if (error_count >= max_error_count) {
+						return;
+					}
+				}
+				offset += width / 8;
+				value += value_increment;
+			}
+		} break;
+		default: {
+			throw script_exception(fmt() << "invalid data width: " << width);
+		}
 	}
 }
