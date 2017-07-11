@@ -21,7 +21,7 @@
 project(agamemnon)
 cmake_minimum_required(VERSION 2.8)
 
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_FLAGS "--std=gnu++11 ${CMAKE_CXX_FLAGS}")
 
 set (
 	SRC_COMMON
@@ -34,6 +34,7 @@ set (
 	src/textutils.cpp
 	src/variable.cpp
 )
+
 
 include_directories(src)
 
